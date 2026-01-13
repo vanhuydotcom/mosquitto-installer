@@ -60,8 +60,9 @@ Source: "mosquitto\*"; DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs
 Source: "config\mosquitto.conf"; DestDir: "{app}\conf"; Flags: ignoreversion onlyifdoesntexist
 
 [Icons]
-Name: "{group}\Start Mosquitto"; Filename: "net"; Parameters: "start mosquitto"; IconFilename: "{app}\bin\mosquitto.ico"
-Name: "{group}\Stop Mosquitto"; Filename: "net"; Parameters: "stop mosquitto"; IconFilename: "{app}\bin\mosquitto.ico"
+Name: "{group}\Start Mosquitto"; Filename: "powershell.exe"; Parameters: "-Command ""Start-Service mosquitto"""; IconFilename: "{app}\bin\mosquitto.ico"
+Name: "{group}\Stop Mosquitto"; Filename: "powershell.exe"; Parameters: "-Command ""Stop-Service mosquitto"""; IconFilename: "{app}\bin\mosquitto.ico"
+Name: "{group}\Mosquitto Status"; Filename: "powershell.exe"; Parameters: "-NoExit -Command ""Get-Service mosquitto; netstat -an | Select-String 1883"""; IconFilename: "{app}\bin\mosquitto.ico"
 Name: "{group}\Mosquitto Logs"; Filename: "{app}\logs"
 Name: "{group}\Mosquitto Configuration"; Filename: "{app}\conf\mosquitto.conf"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
@@ -70,17 +71,17 @@ Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 ; Stop existing service if running
 Filename: "net"; Parameters: "stop mosquitto"; Flags: runhidden waituntilterminated; Check: ServiceExists('mosquitto')
 
-; Install as Windows Service (must run from bin directory)
-Filename: "{app}\bin\mosquitto.exe"; Parameters: "install"; WorkingDir: "{app}\bin"; StatusMsg: "Installing Mosquitto service..."; Flags: runhidden waituntilterminated; Tasks: installservice
+; Remove existing service if exists
+Filename: "{sys}\sc.exe"; Parameters: "delete mosquitto"; Flags: runhidden waituntilterminated; Check: ServiceExists('mosquitto')
 
-; Configure service binary path with config file
-Filename: "{cmd}"; Parameters: "/c sc config mosquitto binPath= ""\""""{app}\bin\mosquitto.exe\"""" -c \""""{app}\conf\mosquitto.conf\"""""; StatusMsg: "Configuring service path..."; Flags: runhidden waituntilterminated; Tasks: installservice
+; Wait for service to be deleted
+Filename: "{cmd}"; Parameters: "/c timeout /t 2 /nobreak"; Flags: runhidden waituntilterminated; Tasks: installservice
+
+; Create service with correct binary path including config file
+Filename: "{sys}\sc.exe"; Parameters: "create mosquitto binPath= ""\""""{app}\bin\mosquitto.exe"""" -c \""""{app}\conf\mosquitto.conf\"""" DisplayName= ""Mosquitto Broker"" start= demand"; StatusMsg: "Installing Mosquitto service..."; Flags: runhidden waituntilterminated; Tasks: installservice
 
 ; Configure service to auto-start (only if autostart task selected)
 Filename: "{sys}\sc.exe"; Parameters: "config mosquitto start= auto"; StatusMsg: "Configuring auto-start..."; Flags: runhidden waituntilterminated; Tasks: autostart
-
-; Configure service to manual start (if autostart not selected)
-Filename: "{sys}\sc.exe"; Parameters: "config mosquitto start= demand"; StatusMsg: "Configuring manual start..."; Flags: runhidden waituntilterminated; Tasks: installservice and not autostart
 
 ; Configure Windows Firewall
 Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""Mosquitto MQTT"" dir=in action=allow protocol=tcp localport=1883 profile=private,domain"; StatusMsg: "Configuring firewall..."; Flags: runhidden waituntilterminated; Tasks: firewall

@@ -6,7 +6,7 @@ set INSTALL_DIR=%~1
 if "%INSTALL_DIR%"=="" set INSTALL_DIR=C:\Program Files\Mosquitto
 
 set LOG_FILE=%INSTALL_DIR%\logs\mqtt-subscriber.log
-set TOPIC=reader/nextwaves-2de8/#
+set TOPIC=reader/#
 
 echo [%date% %time%] Starting MQTT Subscriber for topic: %TOPIC% >> "%LOG_FILE%"
 

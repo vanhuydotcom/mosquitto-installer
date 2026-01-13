@@ -12,8 +12,11 @@ if %errorlevel% equ 0 (
     timeout /t 2 /nobreak >nul
 )
 
-REM Create service with correct binPath
-sc create mosquitto binPath= "\"%INSTALL_DIR%\bin\mosquitto.exe\" -c \"%INSTALL_DIR%\conf\mosquitto.conf\"" DisplayName= "Mosquitto Broker" start= demand
+REM Create service with correct binPath (auto start on boot)
+sc create mosquitto binPath= "\"%INSTALL_DIR%\bin\mosquitto.exe\" -c \"%INSTALL_DIR%\conf\mosquitto.conf\"" DisplayName= "Mosquitto Broker" start= auto
+
+REM Start the service now
+net start mosquitto
 
 if %errorlevel% equ 0 (
     echo Service installed successfully
@@ -21,4 +24,8 @@ if %errorlevel% equ 0 (
     echo Failed to install service
     exit /b 1
 )
+
+REM Install MQTT Subscriber scheduled task
+echo Installing MQTT Subscriber task...
+call "%INSTALL_DIR%\scripts\install-subscriber-task.bat" "%INSTALL_DIR%"
 

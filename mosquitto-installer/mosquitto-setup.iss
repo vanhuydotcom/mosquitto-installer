@@ -70,11 +70,11 @@ Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 ; Stop existing service if running
 Filename: "net"; Parameters: "stop mosquitto"; Flags: runhidden waituntilterminated; Check: ServiceExists('mosquitto')
 
-; Install as Windows Service
-Filename: "{app}\bin\mosquitto.exe"; Parameters: "install"; StatusMsg: "Installing Mosquitto service..."; Flags: runhidden waituntilterminated; Tasks: installservice
+; Install as Windows Service (must run from bin directory)
+Filename: "{app}\bin\mosquitto.exe"; Parameters: "install"; WorkingDir: "{app}\bin"; StatusMsg: "Installing Mosquitto service..."; Flags: runhidden waituntilterminated; Tasks: installservice
 
-; Configure service binary path with config file (use sc.exe to avoid PowerShell alias)
-Filename: "{sys}\sc.exe"; Parameters: "config mosquitto binPath= ""\""""{app}\bin\mosquitto.exe\"""" -c \""""{app}\conf\mosquitto.conf\"""""; StatusMsg: "Configuring service path..."; Flags: runhidden waituntilterminated; Tasks: installservice
+; Configure service binary path with config file
+Filename: "{cmd}"; Parameters: "/c sc config mosquitto binPath= ""\""""{app}\bin\mosquitto.exe\"""" -c \""""{app}\conf\mosquitto.conf\"""""; StatusMsg: "Configuring service path..."; Flags: runhidden waituntilterminated; Tasks: installservice
 
 ; Configure service to auto-start (only if autostart task selected)
 Filename: "{sys}\sc.exe"; Parameters: "config mosquitto start= auto"; StatusMsg: "Configuring auto-start..."; Flags: runhidden waituntilterminated; Tasks: autostart

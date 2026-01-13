@@ -59,6 +59,9 @@ Source: "mosquitto\*"; DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs
 ; Configuration file
 Source: "config\mosquitto.conf"; DestDir: "{app}\conf"; Flags: ignoreversion onlyifdoesntexist
 
+; Service installation script
+Source: "scripts\install-service.bat"; DestDir: "{app}"; Flags: ignoreversion
+
 [Icons]
 Name: "{group}\Start Mosquitto"; Filename: "powershell.exe"; Parameters: "-Command ""Start-Service mosquitto"""; IconFilename: "{app}\bin\mosquitto.ico"
 Name: "{group}\Stop Mosquitto"; Filename: "powershell.exe"; Parameters: "-Command ""Stop-Service mosquitto"""; IconFilename: "{app}\bin\mosquitto.ico"
@@ -68,17 +71,8 @@ Name: "{group}\Mosquitto Configuration"; Filename: "{app}\conf\mosquitto.conf"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 
 [Run]
-; Stop existing service if running
-Filename: "net"; Parameters: "stop mosquitto"; Flags: runhidden waituntilterminated; Check: ServiceExists('mosquitto')
-
-; Remove existing service if exists
-Filename: "{sys}\sc.exe"; Parameters: "delete mosquitto"; Flags: runhidden waituntilterminated; Check: ServiceExists('mosquitto')
-
-; Wait for service to be deleted
-Filename: "{cmd}"; Parameters: "/c timeout /t 2 /nobreak"; Flags: runhidden waituntilterminated; Tasks: installservice
-
-; Create service with correct binary path including config file
-Filename: "{sys}\sc.exe"; Parameters: "create mosquitto binPath= ""\""""{app}\bin\mosquitto.exe"""" -c \""""{app}\conf\mosquitto.conf\"""" DisplayName= ""Mosquitto Broker"" start= demand"; StatusMsg: "Installing Mosquitto service..."; Flags: runhidden waituntilterminated; Tasks: installservice
+; Install service using batch script (handles quoting properly)
+Filename: "{app}\install-service.bat"; Parameters: """{app}"""; StatusMsg: "Installing Mosquitto service..."; Flags: runhidden waituntilterminated; Tasks: installservice
 
 ; Configure service to auto-start (only if autostart task selected)
 Filename: "{sys}\sc.exe"; Parameters: "config mosquitto start= auto"; StatusMsg: "Configuring auto-start..."; Flags: runhidden waituntilterminated; Tasks: autostart

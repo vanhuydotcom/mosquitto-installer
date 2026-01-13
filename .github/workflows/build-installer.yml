@@ -47,28 +47,32 @@ jobs:
       - name: Download Mosquitto
         shell: powershell
         run: |
-          $mosquittoVersion = "2.0.20"
+          $mosquittoVersion = "2.0.22"
           $mosquittoDir = "mosquitto-installer/mosquitto"
-          $mosquittoZip = "mosquitto.zip"
-          
+          $mosquittoExe = "mosquitto-installer.exe"
+          $tempExtract = "temp_mosquitto"
+
           New-Item -ItemType Directory -Force -Path $mosquittoDir | Out-Null
-          
+          New-Item -ItemType Directory -Force -Path $tempExtract | Out-Null
+
           Write-Host "Downloading Mosquitto $mosquittoVersion..."
-          $url = "https://mosquitto.org/files/binary/win64/mosquitto-$mosquittoVersion-install-windows-x64.zip"
-          Invoke-WebRequest -Uri $url -OutFile $mosquittoZip -UseBasicParsing
-          
-          Write-Host "Extracting..."
-          Expand-Archive -Path $mosquittoZip -DestinationPath $mosquittoDir -Force
-          
-          # Move files from subdirectory if needed
-          $subdir = Get-ChildItem -Path $mosquittoDir -Directory | Select-Object -First 1
-          if ($subdir) {
-              Get-ChildItem -Path $subdir.FullName | Move-Item -Destination $mosquittoDir -Force
-              Remove-Item -Path $subdir.FullName -Force -Recurse
-          }
-          
+          $url = "https://mosquitto.org/files/binary/win64/mosquitto-$mosquittoVersion-install-windows-x64.exe"
+          Invoke-WebRequest -Uri $url -OutFile $mosquittoExe -UseBasicParsing
+
+          Write-Host "Extracting Mosquitto installer..."
+          # Use 7zip (included in GitHub Actions) to extract the installer
+          & "C:\Program Files\7-Zip\7z.exe" x $mosquittoExe -o"$tempExtract" -y
+
+          # Copy the necessary files to mosquitto directory
+          Write-Host "Copying files..."
+          Copy-Item -Path "$tempExtract\*" -Destination $mosquittoDir -Recurse -Force
+
+          # Clean up
+          Remove-Item -Path $tempExtract -Recurse -Force
+          Remove-Item -Path $mosquittoExe -Force
+
           Write-Host "Mosquitto files:"
-          Get-ChildItem $mosquittoDir
+          Get-ChildItem $mosquittoDir -Recurse | Select-Object FullName
 
       - name: Install Inno Setup
         shell: powershell

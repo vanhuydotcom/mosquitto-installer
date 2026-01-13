@@ -70,8 +70,8 @@ Filename: "net"; Parameters: "stop ""Mosquitto Broker"""; Flags: runhidden waitu
 ; Install as Windows Service
 Filename: "{app}\bin\mosquitto.exe"; Parameters: "install"; StatusMsg: "Installing Mosquitto service..."; Flags: runhidden waituntilterminated; Tasks: installservice
 
-; Configure service to auto-start and use our config file
-Filename: "sc"; Parameters: "config ""Mosquitto Broker"" start=auto binPath= ""{app}\bin\mosquitto.exe -c {app}\conf\mosquitto.conf"""; StatusMsg: "Configuring service..."; Flags: runhidden waituntilterminated; Tasks: installservice
+; Configure service to auto-start and use our config file (handle spaces in path)
+Filename: "sc"; Parameters: "config ""Mosquitto Broker"" start=auto binPath= ""\""""{app}\bin\mosquitto.exe\"""" -c \""""{app}\conf\mosquitto.conf\"""""; StatusMsg: "Configuring service..."; Flags: runhidden waituntilterminated; Tasks: installservice
 
 ; Configure Windows Firewall
 Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""Circa Mosquitto MQTT"" dir=in action=allow protocol=tcp localport=1883 profile=private,domain"; StatusMsg: "Configuring firewall..."; Flags: runhidden waituntilterminated; Tasks: firewall

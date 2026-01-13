@@ -42,7 +42,8 @@ UninstallDisplayName={#MyAppName}
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "installservice"; Description: "Install as Windows Service (auto-start)"; Flags: checkedonce
+Name: "installservice"; Description: "Install as Windows Service"; Flags: checkedonce
+Name: "autostart"; Description: "Start service automatically on Windows startup"; Flags: unchecked
 Name: "firewall"; Description: "Configure Windows Firewall (allow port 1883)"; Flags: checkedonce
 
 [Dirs]
@@ -59,29 +60,37 @@ Source: "mosquitto\*"; DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs
 Source: "config\mosquitto.conf"; DestDir: "{app}\conf"; Flags: ignoreversion onlyifdoesntexist
 
 [Icons]
+Name: "{group}\Start Mosquitto"; Filename: "net"; Parameters: "start mosquitto"; IconFilename: "{app}\bin\mosquitto.ico"
+Name: "{group}\Stop Mosquitto"; Filename: "net"; Parameters: "stop mosquitto"; IconFilename: "{app}\bin\mosquitto.ico"
 Name: "{group}\Mosquitto Logs"; Filename: "{app}\logs"
 Name: "{group}\Mosquitto Configuration"; Filename: "{app}\conf\mosquitto.conf"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 
 [Run]
 ; Stop existing service if running
-Filename: "net"; Parameters: "stop ""Mosquitto Broker"""; Flags: runhidden waituntilterminated; Check: ServiceExists('Mosquitto Broker')
+Filename: "net"; Parameters: "stop mosquitto"; Flags: runhidden waituntilterminated; Check: ServiceExists('mosquitto')
 
 ; Install as Windows Service
 Filename: "{app}\bin\mosquitto.exe"; Parameters: "install"; StatusMsg: "Installing Mosquitto service..."; Flags: runhidden waituntilterminated; Tasks: installservice
 
-; Configure service to auto-start and use our config file (handle spaces in path)
-Filename: "sc"; Parameters: "config ""Mosquitto Broker"" start=auto binPath= ""\""""{app}\bin\mosquitto.exe\"""" -c \""""{app}\conf\mosquitto.conf\"""""; StatusMsg: "Configuring service..."; Flags: runhidden waituntilterminated; Tasks: installservice
+; Configure service binary path with config file (use sc.exe to avoid PowerShell alias)
+Filename: "{sys}\sc.exe"; Parameters: "config mosquitto binPath= ""\""""{app}\bin\mosquitto.exe\"""" -c \""""{app}\conf\mosquitto.conf\"""""; StatusMsg: "Configuring service path..."; Flags: runhidden waituntilterminated; Tasks: installservice
+
+; Configure service to auto-start (only if autostart task selected)
+Filename: "{sys}\sc.exe"; Parameters: "config mosquitto start= auto"; StatusMsg: "Configuring auto-start..."; Flags: runhidden waituntilterminated; Tasks: autostart
+
+; Configure service to manual start (if autostart not selected)
+Filename: "{sys}\sc.exe"; Parameters: "config mosquitto start= demand"; StatusMsg: "Configuring manual start..."; Flags: runhidden waituntilterminated; Tasks: installservice and not autostart
 
 ; Configure Windows Firewall
 Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""Circa Mosquitto MQTT"" dir=in action=allow protocol=tcp localport=1883 profile=private,domain"; StatusMsg: "Configuring firewall..."; Flags: runhidden waituntilterminated; Tasks: firewall
 
-; Start service
-Filename: "net"; Parameters: "start ""Mosquitto Broker"""; StatusMsg: "Starting Mosquitto service..."; Flags: runhidden waituntilterminated; Tasks: installservice
+; Start service now (optional - ask user)
+Filename: "net"; Parameters: "start mosquitto"; Description: "Start Mosquitto service now"; StatusMsg: "Starting Mosquitto service..."; Flags: runhidden waituntilterminated postinstall skipifsilent; Tasks: installservice
 
 [UninstallRun]
 ; Stop and remove service
-Filename: "net"; Parameters: "stop ""Mosquitto Broker"""; RunOnceId: "StopMosquitto"; Flags: runhidden waituntilterminated
+Filename: "net"; Parameters: "stop mosquitto"; RunOnceId: "StopMosquitto"; Flags: runhidden waituntilterminated
 Filename: "{app}\bin\mosquitto.exe"; Parameters: "uninstall"; RunOnceId: "UninstallMosquitto"; Flags: runhidden waituntilterminated
 
 ; Remove firewall rule
@@ -98,7 +107,7 @@ function ServiceExists(ServiceName: String): Boolean;
 var
   ResultCode: Integer;
 begin
-  Result := Exec('sc', 'query "' + ServiceName + '"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+  Result := Exec('sc.exe', 'query "' + ServiceName + '"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
 end;
 
 function InitializeSetup(): Boolean;

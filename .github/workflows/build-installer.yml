@@ -1,114 +1,58 @@
-# Build Mosquitto Installer
-#
-# Builds standalone Mosquitto MQTT Broker installer for Windows
-#
-# Trigger methods:
-# 1. Manual: GitHub UI → Actions → Build Mosquitto Installer → Run workflow
-# 2. Tag push: git tag mosquitto-v1.0.0 && git push origin mosquitto-v1.0.0
-#
-# Download: Actions → Select run → Artifacts → Download
-
 name: Build Mosquitto Installer
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Installer version (e.g., 1.0.0)'
-        required: false
-        default: '1.0.0'
-
   push:
+    branches: [main, master]
     tags:
-      - 'mosquitto-v*'
-
-permissions:
-  contents: write
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   build:
     runs-on: windows-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set version
-        id: version
-        shell: bash
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/mosquitto-v* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/mosquitto-v}"
-          elif [[ -n "${{ github.event.inputs.version }}" ]]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="1.0.0"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building Mosquitto Installer v$VERSION"
+          python -m pip install --upgrade pip
+          pip install pyinstaller
 
-      - name: Download Mosquitto
-        shell: powershell
+      - name: Build EXE
         run: |
-          $mosquittoVersion = "2.0.22"
-          $mosquittoDir = "mosquitto-installer/mosquitto"
-          $mosquittoExe = "mosquitto-installer.exe"
-          $tempExtract = "temp_mosquitto"
+          cd mosquitto-installer
+          pyinstaller --onefile --uac-admin --name "MosquittoInstaller" installer.py
 
-          New-Item -ItemType Directory -Force -Path $mosquittoDir | Out-Null
-          New-Item -ItemType Directory -Force -Path $tempExtract | Out-Null
-
-          Write-Host "Downloading Mosquitto $mosquittoVersion..."
-          $url = "https://mosquitto.org/files/binary/win64/mosquitto-$mosquittoVersion-install-windows-x64.exe"
-          Invoke-WebRequest -Uri $url -OutFile $mosquittoExe -UseBasicParsing
-
-          Write-Host "Extracting Mosquitto installer..."
-          # Use 7zip (included in GitHub Actions) to extract the installer
-          & "C:\Program Files\7-Zip\7z.exe" x $mosquittoExe -o"$tempExtract" -y
-
-          # Copy the necessary files to mosquitto directory
-          Write-Host "Copying files..."
-          Copy-Item -Path "$tempExtract\*" -Destination $mosquittoDir -Recurse -Force
-
-          # Clean up
-          Remove-Item -Path $tempExtract -Recurse -Force
-          Remove-Item -Path $mosquittoExe -Force
-
-          Write-Host "Mosquitto files:"
-          Get-ChildItem $mosquittoDir -Recurse | Select-Object FullName
-
-      - name: Install Inno Setup
-        shell: powershell
-        run: |
-          choco install innosetup -y
-          echo "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-      - name: Update version in installer script
-        shell: powershell
-        run: |
-          $issFile = "mosquitto-installer/mosquitto-setup.iss"
-          $content = Get-Content $issFile -Raw
-          $content = $content -replace '#define MyAppVersion ".*"', "#define MyAppVersion `"${{ steps.version.outputs.version }}`""
-          Set-Content -Path $issFile -Value $content
-
-      - name: Build Installer
-        working-directory: mosquitto-installer
-        run: iscc mosquitto-setup.iss
-
-      - name: Upload Artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Mosquitto-Setup-${{ steps.version.outputs.version }}
-          path: mosquitto-installer/output/*.exe
-          retention-days: 30
+          name: MosquittoInstaller
+          path: mosquitto-installer/dist/MosquittoInstaller.exe
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: MosquittoInstaller
 
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/mosquitto-v')
         uses: softprops/action-gh-release@v1
         with:
-          files: mosquitto-installer/output/*.exe
-          name: Mosquitto Installer v${{ steps.version.outputs.version }}
+          files: MosquittoInstaller.exe
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

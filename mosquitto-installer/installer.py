@@ -210,19 +210,12 @@ def main():
         print("\n📡 Connection Info:")
         print(f"  - Host: localhost (or your PC's IP address)")
         print(f"  - Port: {MQTT_PORT}")
-        print(f"  - Topic: {MQTT_TOPIC}")
         print("\n📱 To connect from Mac/MQTTX:")
         print("  1. Find this PC's IP: ipconfig")
         print("  2. Connect to: <IP>:1883")
-        print("  3. Publish to topic: reader/test")
 
-        # Ask to run subscriber
-        response = input("\nDo you want to start the subscriber now? (y/n): ").strip().lower()
-        if response == 'y':
-            run_subscriber()
-        else:
-            print("\nTo run subscriber later, run this program again.")
-            input("\nPress Enter to exit...")
+        print("\nMosquitto service is running!")
+        input("\nPress Enter to exit...")
     else:
         print("\nInstallation failed!")
         input("\nPress Enter to exit...")

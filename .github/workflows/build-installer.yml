@@ -98,7 +98,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Circa-Mosquitto-Setup-${{ steps.version.outputs.version }}
+          name: Mosquitto-Setup-${{ steps.version.outputs.version }}
           path: mosquitto-installer/output/*.exe
           retention-days: 30
 

@@ -1,4 +1,4 @@
-# Circa Mosquitto MQTT Broker - Build Script (PowerShell)
+# Mosquitto MQTT Broker - Build Script (PowerShell)
 #
 # This script builds the Mosquitto installer:
 # 1. Downloads Mosquitto binaries (if not present)
@@ -157,6 +157,6 @@ Write-Host "============================================" -ForegroundColor Green
 Write-Host "  Build Complete!" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "Output: $scriptDir\output\Circa-Mosquitto-Setup-$installerVersion.exe"
+Write-Host "Output: $scriptDir\output\Mosquitto-Setup-$installerVersion.exe"
 Write-Host ""
 

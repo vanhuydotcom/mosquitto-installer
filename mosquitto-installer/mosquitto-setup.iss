@@ -1,4 +1,4 @@
-; Circa Mosquitto MQTT Broker - Inno Setup Installer Script
+; Mosquitto MQTT Broker - Inno Setup Installer Script
 ;
 ; Standalone Mosquitto MQTT Broker installer
 ; - Installs Mosquitto binaries
@@ -7,10 +7,10 @@
 ;
 ; Build: iscc mosquitto-setup.iss
 
-#define MyAppName "Circa Mosquitto MQTT Broker"
+#define MyAppName "Mosquitto MQTT Broker"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "Circa"
-#define MyAppURL "https://circa.vn"
+#define MyAppPublisher "Eclipse"
+#define MyAppURL "https://mosquitto.org"
 
 [Setup]
 AppId={{B8F9E0D3-4C5D-6F7A-8B9C-0D1E2F3A4B5C}
@@ -20,12 +20,12 @@ AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 
-DefaultDirName={autopf}\Circa\Mosquitto
+DefaultDirName={autopf}\Mosquitto
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 
 OutputDir=output
-OutputBaseFilename=Circa-Mosquitto-Setup-{#MyAppVersion}
+OutputBaseFilename=Mosquitto-Setup-{#MyAppVersion}
 SetupIconFile=assets\circa-icon.ico
 
 Compression=lzma2/ultra64
@@ -83,7 +83,7 @@ Filename: "{sys}\sc.exe"; Parameters: "config mosquitto start= auto"; StatusMsg:
 Filename: "{sys}\sc.exe"; Parameters: "config mosquitto start= demand"; StatusMsg: "Configuring manual start..."; Flags: runhidden waituntilterminated; Tasks: installservice and not autostart
 
 ; Configure Windows Firewall
-Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""Circa Mosquitto MQTT"" dir=in action=allow protocol=tcp localport=1883 profile=private,domain"; StatusMsg: "Configuring firewall..."; Flags: runhidden waituntilterminated; Tasks: firewall
+Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""Mosquitto MQTT"" dir=in action=allow protocol=tcp localport=1883 profile=private,domain"; StatusMsg: "Configuring firewall..."; Flags: runhidden waituntilterminated; Tasks: firewall
 
 ; Start service now (optional - ask user)
 Filename: "net"; Parameters: "start mosquitto"; Description: "Start Mosquitto service now"; StatusMsg: "Starting Mosquitto service..."; Flags: runhidden waituntilterminated postinstall skipifsilent; Tasks: installservice
@@ -94,7 +94,7 @@ Filename: "net"; Parameters: "stop mosquitto"; RunOnceId: "StopMosquitto"; Flags
 Filename: "{app}\bin\mosquitto.exe"; Parameters: "uninstall"; RunOnceId: "UninstallMosquitto"; Flags: runhidden waituntilterminated
 
 ; Remove firewall rule
-Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""Circa Mosquitto MQTT"""; RunOnceId: "RemoveFirewall"; Flags: runhidden waituntilterminated
+Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""Mosquitto MQTT"""; RunOnceId: "RemoveFirewall"; Flags: runhidden waituntilterminated
 
 [UninstallDelete]
 Type: files; Name: "{app}\logs\*.log"

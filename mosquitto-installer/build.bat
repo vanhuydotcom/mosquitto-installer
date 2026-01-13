@@ -1,5 +1,5 @@
 @echo off
-REM Circa Mosquitto MQTT Broker - Build Script Wrapper
+REM Mosquitto MQTT Broker - Build Script Wrapper
 REM
 REM Usage:
 REM   build.bat              - Full build (download + installer)
@@ -11,7 +11,7 @@ cd /d "%~dp0"
 
 echo.
 echo ============================================
-echo   Circa Mosquitto Installer - Build
+echo   Mosquitto Installer - Build
 echo ============================================
 echo.
 
@@ -63,6 +63,6 @@ if %errorlevel% neq 0 (
 
 echo.
 echo Build completed successfully!
-echo Output: output\Circa-Mosquitto-Setup-*.exe
+echo Output: output\Mosquitto-Setup-*.exe
 exit /b 0
 
